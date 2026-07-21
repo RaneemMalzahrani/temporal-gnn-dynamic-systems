@@ -5,6 +5,14 @@ interaction graph. The project implements a Temporal Graph Network (TGN) with
 node memory, learned time encoding, recent-neighbor attention, and a link
 predictor.
 
+## Academic context
+
+This project was developed for the **Graph Theory** course in **Level 3 of the
+Master's program at Al-Baha University**.
+
+تم تطوير هذا المشروع لمقرر **نظرية الرسوم البيانية (Graph Theory)** في
+**المستوى الثالث من برنامج الماجستير بجامعة الباحة**.
+
 ## Assignment coverage
 
 - **Temporal dataset:** JODIE Wikipedia.
@@ -65,49 +73,199 @@ tests/                Leakage and time-analysis tests
 outputs/              Metrics and checkpoints; excluded from Git
 ```
 
-## Installation
+## Requirements
 
-Python 3.10+ is required. A GPU is helpful but not required.
+- Python 3.10 or newer; Python 3.12 is recommended.
+- About 1GB of free disk space for the raw and processed Wikipedia data.
+- An internet connection for the first dataset download.
+- A CUDA GPU is optional. Without CUDA, training runs on CPU and can take much
+  longer. Apple Silicon currently uses CPU in this implementation.
+
+## Quick start on the current Mac
+
+The required ML libraries are already available in the existing Anaconda
+Python 3.12 installation. Open Terminal and enter the project directory:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+cd "/Users/raneem/Desktop/temporal-gnn-dynamic-systems"
+```
+
+First, run the automated tests. This command does not need the Wikipedia data:
+
+```bash
+PYTHONPATH=src PYTHONWARNINGS=ignore \
+  /opt/anaconda3/bin/python3.12 -m unittest discover -s tests -v
+```
+
+A successful setup ends with `OK`. The tests train both TGN variants on a tiny
+synthetic event stream and check temporal leakage and fair comparison rules.
+
+Display the available project commands:
+
+```bash
+PYTHONPATH=src /opt/anaconda3/bin/python3.12 \
+  -m temporal_gnn.run --help
+```
+
+## Clean installation on another computer
+
+Create an isolated Python 3.12 environment so package versions do not conflict:
+
+```bash
+conda create -n temporal-gnn python=3.12 -y
+conda activate temporal-gnn
+cd /path/to/temporal-gnn-dynamic-systems
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 ```
 
-## Run the project
+After editable installation, use the shorter `temporal-gnn` commands shown
+below. If the command is not found, use
+`python -m temporal_gnn.run` in its place.
 
-The first command downloads the official Wikipedia data (roughly 533MB raw).
-If the Stanford server is slow, run it on Colab or another stable connection.
+## Step 1 — download and inspect the dataset
+
+Run this from the project directory:
 
 ```bash
-# Inspect the data and verify chronological boundaries.
 temporal-gnn inspect --config configs/baseline_tgn.json
-
-# Optional non-neural reference (not the main baseline model).
-temporal-gnn reference --config configs/baseline_tgn.json
-
-# Train model 1: Baseline TGN.
-temporal-gnn train --config configs/baseline_tgn.json
-
-# Train model 2: Proposed/Enhanced TGN.
-temporal-gnn train --config configs/enhanced_tgn.json
-
-# Verify that the settings match and generate comparison.json + comparison.md.
-temporal-gnn compare
 ```
 
-For a one-epoch integration check:
+On the current Mac, the equivalent command without installing the project is:
+
+```bash
+PYTHONPATH=src PYTHONWARNINGS=ignore \
+  /opt/anaconda3/bin/python3.12 -m temporal_gnn.run inspect \
+  --config configs/baseline_tgn.json
+```
+
+PyTorch Geometric downloads the JODIE Wikipedia CSV on the first run and saves
+it under `data/raw/JODIE/`. The raw download is roughly 533MB and is excluded
+from Git. The command then prints event counts, feature dimensions, split
+sizes, timestamp boundaries, and whether events are chronologically sorted.
+
+If automatic downloading fails or leaves an incomplete file, download it via
+HTTPS and rerun the inspect command:
+
+```bash
+mkdir -p data/raw/JODIE/wikipedia/raw
+curl -L --fail --retry 5 \
+  https://snap.stanford.edu/jodie/wikipedia.csv \
+  --output data/raw/JODIE/wikipedia/raw/wikipedia.csv
+```
+
+Do not begin training unless `inspect` finishes successfully.
+
+## Step 2 — optional simple reference
+
+This is a non-neural reference only; it is not the required Baseline TGN:
+
+```bash
+temporal-gnn reference --config configs/baseline_tgn.json
+```
+
+Its metrics are written to
+`outputs/baseline_tgn/reference_metrics.json`.
+
+## Step 3 — quick smoke runs
+
+Before full training, train each model for one epoch on a limited event subset:
 
 ```bash
 temporal-gnn train --config configs/baseline_tgn.json --smoke
 temporal-gnn train --config configs/enhanced_tgn.json --smoke
 ```
 
-Metrics are saved as JSON under `outputs/`. Copy the final values into the
-results table in `docs/EXPERIMENT.md` and discuss both chronological and
-inactivity-gap trends.
+Smoke outputs are isolated under each model's `smoke/` directory, so they
+cannot overwrite or be confused with final experiment results.
+
+## Step 4 — train the Baseline Model
+
+```bash
+temporal-gnn train --config configs/baseline_tgn.json
+```
+
+This trains the standard TGN, selects the best epoch using validation Average
+Precision, restores that checkpoint, replays the training and validation
+history, and evaluates the untouched test period. Outputs:
+
+- `outputs/baseline_tgn/best_model.pt`
+- `outputs/baseline_tgn/tgn_metrics.json`
+
+## Step 5 — train the Proposed/Enhanced Model
+
+```bash
+temporal-gnn train --config configs/enhanced_tgn.json
+```
+
+The enhanced model uses exactly the same experimental settings. Outputs:
+
+- `outputs/enhanced_tgn/best_model.pt`
+- `outputs/enhanced_tgn/tgn_metrics.json`
+
+## Step 6 — compare both models
+
+After both full training runs finish:
+
+```bash
+temporal-gnn compare
+```
+
+The command first verifies that all controlled settings match, then reports the
+Baseline-to-Enhanced change in Average Precision, ROC-AUC, and parameter count.
+It creates:
+
+- `outputs/comparison/comparison.json`
+- `outputs/comparison/comparison.md`
+
+Copy the final values into the table in `docs/EXPERIMENT.md`, then discuss
+chronological-bin and inactivity-gap performance.
+
+## Complete command sequence
+
+After installing the project and activating its environment, the full sequence
+is:
+
+```bash
+cd /path/to/temporal-gnn-dynamic-systems
+pytest
+temporal-gnn inspect --config configs/baseline_tgn.json
+temporal-gnn reference --config configs/baseline_tgn.json
+temporal-gnn train --config configs/baseline_tgn.json --smoke
+temporal-gnn train --config configs/enhanced_tgn.json --smoke
+temporal-gnn train --config configs/baseline_tgn.json
+temporal-gnn train --config configs/enhanced_tgn.json
+temporal-gnn compare
+```
+
+## Common problems
+
+### `temporal-gnn: command not found`
+
+Activate the environment and reinstall the project:
+
+```bash
+conda activate temporal-gnn
+python -m pip install -e ".[dev]"
+```
+
+Alternatively, run commands as `PYTHONPATH=src python -m temporal_gnn.run ...`.
+
+### Incomplete Wikipedia download
+
+The loader rejects suspiciously small files instead of silently training on
+partial data. Move or delete the incomplete
+`data/raw/JODIE/wikipedia/raw/wikipedia.csv`, then retry the HTTPS download.
+
+### Training was interrupted
+
+The current implementation saves the best model after training completes but
+does not resume a partially completed run. Rerun the same training command.
+
+### Comparison refuses to run
+
+Both `tgn_metrics.json` files must come from full runs, and all controlled
+settings must match. Do not compare smoke output against a full training run.
 
 ## Tests
 

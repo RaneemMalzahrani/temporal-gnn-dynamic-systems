@@ -46,6 +46,10 @@ def run_train(config, splits, smoke: bool) -> None:
     from .experiment import TGNExperiment
 
     data, train_data, val_data, test_data = splits
+    if smoke:
+        train_data = train_data[: min(5_000, train_data.num_events)]
+        val_data = val_data[: min(1_000, val_data.num_events)]
+        test_data = test_data[: min(1_000, test_data.num_events)]
     random.seed(config.seed)
     torch.manual_seed(config.seed)
     if torch.cuda.is_available():
@@ -89,7 +93,9 @@ def run_train(config, splits, smoke: bool) -> None:
         "history": history,
         "config": config.to_dict(),
     }
-    output_dir = Path(config.output_dir)
+    output_dir = Path(config.output_dir) / "smoke" if smoke else Path(
+        config.output_dir
+    )
     _write_json(output_dir / "tgn_metrics.json", result)
     output_dir.mkdir(parents=True, exist_ok=True)
     torch.save(best_state, output_dir / "best_model.pt")
