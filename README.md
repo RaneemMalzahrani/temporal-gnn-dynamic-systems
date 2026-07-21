@@ -1,41 +1,95 @@
 # Temporal Graph Neural Networks for Dynamic Systems
 
-A clean, reproducible implementation of a temporal graph neural network for
-dynamic systems. This project is being rebuilt from scratch.
+A from-scratch, leakage-safe study of temporal link prediction on a dynamic
+interaction graph. The project implements a Temporal Graph Network (TGN) with
+node memory, learned time encoding, recent-neighbor attention, and a link
+predictor.
 
-## Status
+## Assignment coverage
 
-Project foundation created. The exact task, dataset, prediction target, and
-evaluation protocol will be defined before model implementation.
+- **Temporal dataset:** JODIE Wikipedia.
+- **Temporal link prediction:** predict whether a source and destination will
+  interact at a given event time.
+- **Memory modules:** persistent node states updated only after prediction.
+- **Time encoding:** learned relative-time features in TGN memory and graph
+  attention.
+- **Time-aware analysis:** metrics across chronological test segments and
+  node-pair inactivity gaps.
+- **Comparison:** causal recency-frequency baseline and a graph-time-feature
+  ablation.
 
-## Design principles
+## Why this version is reliable
 
-- Split data chronologically to prevent future information from leaking into
-  training.
-- Establish a simple non-neural baseline before training a temporal GNN.
-- Keep raw data immutable and outside version control.
-- Make preprocessing, training, and evaluation reproducible from commands.
-- Report metrics on a truly held-out time period.
-- Test temporal ordering, graph construction, and negative sampling.
+The train, validation, and test sets are consecutive periods—not random rows.
+The code rejects unsorted or overlapping splits, never shuffles event loaders,
+scores each event before revealing it to memory, and reconstructs the temporal
+state by replaying past events before final testing.
 
-## Structure
+## Project structure
 
 ```text
-configs/              Experiment configuration
-data/raw/             Original local data (not tracked by Git)
-data/processed/       Generated datasets (not tracked by Git)
-notebooks/            Exploration only
-src/temporal_gnn/     Reusable project code
-tests/                Automated correctness tests
+configs/              Reproducible experiment settings
+data/                 Local downloads; excluded from Git
+docs/EXPERIMENT.md    Research protocol and results template
+src/temporal_gnn/     Data, baseline, model, training, and analysis code
+tests/                Leakage and time-analysis tests
+outputs/              Metrics and checkpoints; excluded from Git
 ```
 
-## Next decision
+## Installation
 
-Model and dependency choices will be made after confirming:
+Python 3.10+ is required. A GPU is helpful but not required.
 
-1. What one event or snapshot represents.
-2. The node and edge definitions.
-3. Whether time is continuous or snapshot-based.
-4. The prediction target (links, nodes, graph state, or forecasting).
-5. The official dataset split and evaluation metric.
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
+```
+
+## Run the project
+
+The first command downloads the official Wikipedia data (roughly 533MB raw).
+If the Stanford server is slow, run it on Colab or another stable connection.
+
+```bash
+# Inspect the data and verify chronological boundaries.
+temporal-gnn inspect --config configs/wikipedia.json
+
+# Establish a non-neural floor.
+temporal-gnn baseline --config configs/wikipedia.json
+
+# Train the full TGN.
+temporal-gnn train --config configs/wikipedia.json
+
+# Run the time-feature ablation.
+temporal-gnn train --config configs/wikipedia_no_graph_time.json
+```
+
+For a one-epoch integration check:
+
+```bash
+temporal-gnn train --config configs/wikipedia.json --smoke
+```
+
+Metrics are saved as JSON under `outputs/`. Copy the final values into the
+results table in `docs/EXPERIMENT.md` and discuss both chronological and
+inactivity-gap trends.
+
+## Tests
+
+```bash
+pytest
+```
+
+The tests cover chronological ordering, split leakage, time bins, and
+inactivity-gap analysis.
+
+## References
+
+- [Temporal Graph Networks paper](https://arxiv.org/abs/2006.10637)
+- [PyTorch Geometric TGN example](https://github.com/pyg-team/pytorch_geometric/blob/master/examples/tgn.py)
+- [JODIEDataset documentation](https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.datasets.JODIEDataset.html)
+- [TGNMemory documentation](https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.nn.models.TGNMemory.html)
+- [TemporalData documentation](https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.data.TemporalData.html)
 

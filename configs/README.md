@@ -1,5 +1,5 @@
 # Experiment configurations
 
-Configuration files will be added after the dataset schema and prediction task
-are confirmed.
-
+- `wikipedia.json`: full TGN with graph relative-time features.
+- `wikipedia_no_graph_time.json`: ablation that zeros graph-attention time
+  features while retaining the TGN memory architecture.

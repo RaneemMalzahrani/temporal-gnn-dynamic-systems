@@ -1,0 +1,17 @@
+{
+  "dataset": "Wikipedia",
+  "data_root": "data/raw/JODIE",
+  "output_dir": "outputs/wikipedia_no_graph_time",
+  "seed": 42,
+  "val_ratio": 0.15,
+  "test_ratio": 0.15,
+  "batch_size": 200,
+  "neighbor_size": 10,
+  "memory_dim": 100,
+  "time_dim": 100,
+  "embedding_dim": 100,
+  "use_graph_time_encoding": false,
+  "learning_rate": 0.0001,
+  "epochs": 20,
+  "patience": 5
+}
