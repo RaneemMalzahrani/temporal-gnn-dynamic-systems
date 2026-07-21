@@ -10,8 +10,6 @@ predictor.
 This project was developed for the **Graph Theory** course in **Level 3 of the
 Master's program at Al-Baha University**.
 
-تم تطوير هذا المشروع لمقرر **نظرية الرسوم البيانية (Graph Theory)** في
-**المستوى الثالث من برنامج الماجستير بجامعة الباحة**.
 
 ## Assignment coverage
 
@@ -22,7 +20,7 @@ Master's program at Al-Baha University**.
 - **Time encoding:** learned relative-time features in TGN memory and graph
   attention.
 - **Time-aware analysis:** metrics across chronological test segments and
-  node-pair inactivity gaps.
+  endpoint inactivity gaps.
 - **Controlled comparison:** a standard Baseline TGN and a Proposed/Enhanced
   TGN trained under identical conditions.
 
@@ -62,6 +60,22 @@ The code rejects unsorted or overlapping splits, never shuffles event loaders,
 scores each event before revealing it to memory, and reconstructs the temporal
 state by replaying past events before final testing.
 
+## Final results
+
+Both models were trained under the same controlled setup. The simpler Baseline
+TGN performed slightly better than the proposed enhancement:
+
+| Model | Parameters | Validation AP | Test AP | Test ROC-AUC |
+|---|---:|---:|---:|---:|
+| Baseline TGN | 260,301 | 0.9611 | **0.9491** | **0.9488** |
+| Proposed/Enhanced TGN | 293,901 | 0.9571 | 0.9469 | 0.9423 |
+
+The enhanced model changed Test AP by -0.0021 and ROC-AUC by -0.0065 while
+using 12.9% more trainable parameters. This negative result is reported
+honestly: the added message encoder and fusion gate did not improve this
+dataset under the controlled protocol. Detailed time-aware results are in
+`docs/RESULTS.md`.
+
 ## Project structure
 
 ```text
@@ -87,7 +101,7 @@ The required ML libraries are already available in the existing Anaconda
 Python 3.12 installation. Open Terminal and enter the project directory:
 
 ```bash
-cd "/Users/raneem/Desktop/temporal-gnn-dynamic-systems"
+cd ~/Desktop/temporal-gnn-dynamic-systems
 ```
 
 First, run the automated tests. This command does not need the Wikipedia data:

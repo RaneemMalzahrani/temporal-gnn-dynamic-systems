@@ -68,7 +68,7 @@ comparison reports this complexity difference beside the accuracy metrics.
 - Average Precision (primary)
 - ROC-AUC
 - Metrics in four chronological test bins
-- Metrics in four node-pair inactivity-gap bins
+- Metrics in four endpoint inactivity-gap bins
 
 ## Commands
 
@@ -84,17 +84,22 @@ Fill this table from `outputs/comparison/comparison.md` after both runs.
 
 | Model | Validation AP | Test AP | Test ROC-AUC |
 |---|---:|---:|---:|
-| Baseline TGN | TBD | TBD | TBD |
-| Proposed/Enhanced TGN | TBD | TBD | TBD |
-| Improvement | — | TBD | TBD |
+| Baseline TGN | 0.9611 | 0.9491 | 0.9488 |
+| Proposed/Enhanced TGN | 0.9571 | 0.9469 | 0.9423 |
+| Improvement | -0.0040 | -0.0021 | -0.0065 |
 
 The optional recency-frequency reference is reported separately and must not
 replace Baseline TGN in this table.
+
+The proposed enhancement did not outperform the baseline. It added 33,600
+parameters (+12.9%) while slightly reducing both test metrics. This is a valid
+experimental outcome: the extra message transformation and fusion gate added
+complexity without improving generalization on Wikipedia under this setup.
 
 ## Interpretation checklist
 
 - State whether the enhanced model improves AP and ROC-AUC.
 - Compare early and late chronological test bins.
-- Check whether long-inactive node pairs remain more difficult.
+- Check whether links involving long-inactive endpoints remain more difficult.
 - Discuss whether gains justify the added parameters and complexity.
 - Report limitations: one dataset, sampled negatives, and transductive nodes.

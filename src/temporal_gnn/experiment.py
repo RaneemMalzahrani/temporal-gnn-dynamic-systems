@@ -175,9 +175,11 @@ class TGNExperiment:
             embeddings, last_update = self._embed(batch)
             source_update = last_update[self.assoc[batch.src]]
             destination_update = last_update[self.assoc[batch.dst]]
-            last_pair_activity = torch.maximum(source_update, destination_update)
+            last_endpoint_activity = torch.maximum(
+                source_update, destination_update
+            )
             inactivity_gaps.extend(
-                (batch.t - last_pair_activity).clamp_min(0).cpu().tolist()
+                (batch.t - last_endpoint_activity).clamp_min(0).cpu().tolist()
             )
             positive = self.modules.predictor(
                 embeddings[self.assoc[batch.src]], embeddings[self.assoc[batch.dst]]

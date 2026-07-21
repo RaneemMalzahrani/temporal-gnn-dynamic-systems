@@ -47,7 +47,7 @@ def inactivity_gap_performance(
     inactivity_gaps: list[float],
     n_bins: int = 4,
 ) -> list[dict[str, float | int]]:
-    """Measure performance from recently active to long-inactive node pairs."""
+    """Measure performance from recently active to long-inactive endpoints."""
     size = len(positive_scores)
     if len(negative_scores) != size or len(inactivity_gaps) != size:
         raise ValueError("scores and inactivity gaps must align by event")
