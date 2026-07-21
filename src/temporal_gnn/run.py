@@ -8,6 +8,7 @@ import random
 from pathlib import Path
 
 from .baseline import RecencyFrequencyBaseline, evaluate_baseline, warm_baseline
+from .compare import compare_results
 from .config import load_config
 from .data import describe_data, load_temporal_data
 
@@ -27,14 +28,15 @@ def run_inspect(config, splits) -> None:
     _print(describe_data(data, train_data, val_data, test_data))
 
 
-def run_baseline(config, splits) -> None:
+def run_reference(config, splits) -> None:
     _, train_data, val_data, test_data = splits
     model = RecencyFrequencyBaseline()
     warm_baseline(model, train_data)
     validation = evaluate_baseline(model, val_data, config.seed)
     test = evaluate_baseline(model, test_data, config.seed + 1)
-    result = {"model": "recency_frequency", "validation": validation, "test": test}
-    _write_json(Path(config.output_dir) / "baseline_metrics.json", result)
+    result = {"model": "recency_frequency_reference", "validation": validation,
+              "test": test}
+    _write_json(Path(config.output_dir) / "reference_metrics.json", result)
     _print(result)
 
 
@@ -79,8 +81,9 @@ def run_train(config, splits, smoke: bool) -> None:
     best_validation = experiment.evaluate(val_data, config.seed)
     test = experiment.evaluate(test_data, config.seed + 1)
     result = {
-        "model": "tgn",
+        "model": f"tgn_{config.model_variant}",
         "device": str(device),
+        "trainable_parameters": experiment.trainable_parameter_count(),
         "best_validation": best_validation,
         "test": test,
         "history": history,
@@ -95,17 +98,35 @@ def run_train(config, splits, smoke: bool) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Temporal GNN experiments")
-    parser.add_argument("command", choices=("inspect", "baseline", "train"))
-    parser.add_argument("--config", default="configs/wikipedia.json")
+    parser.add_argument(
+        "command", choices=("inspect", "reference", "train", "compare")
+    )
+    parser.add_argument("--config", default="configs/baseline_tgn.json")
     parser.add_argument("--smoke", action="store_true")
+    parser.add_argument(
+        "--baseline-results",
+        default="outputs/baseline_tgn/tgn_metrics.json",
+    )
+    parser.add_argument(
+        "--enhanced-results",
+        default="outputs/enhanced_tgn/tgn_metrics.json",
+    )
+    parser.add_argument("--out", default="outputs/comparison")
     args = parser.parse_args()
+
+    if args.command == "compare":
+        result = compare_results(
+            args.baseline_results, args.enhanced_results, args.out
+        )
+        _print(result["summary"])
+        return
 
     config = load_config(args.config)
     splits = load_temporal_data(config)
     if args.command == "inspect":
         run_inspect(config, splits)
-    elif args.command == "baseline":
-        run_baseline(config, splits)
+    elif args.command == "reference":
+        run_reference(config, splits)
     else:
         run_train(config, splits, args.smoke)
 

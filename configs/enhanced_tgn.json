@@ -1,7 +1,7 @@
 {
   "dataset": "Wikipedia",
   "data_root": "data/raw/JODIE",
-  "output_dir": "outputs/wikipedia",
+  "output_dir": "outputs/enhanced_tgn",
   "seed": 42,
   "val_ratio": 0.15,
   "test_ratio": 0.15,
@@ -10,6 +10,7 @@
   "memory_dim": 100,
   "time_dim": 100,
   "embedding_dim": 100,
+  "model_variant": "enhanced",
   "learning_rate": 0.0001,
   "epochs": 20,
   "patience": 5

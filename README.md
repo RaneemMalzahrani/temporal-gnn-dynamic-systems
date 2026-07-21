@@ -15,8 +15,37 @@ predictor.
   attention.
 - **Time-aware analysis:** metrics across chronological test segments and
   node-pair inactivity gaps.
-- **Comparison:** causal recency-frequency baseline and a graph-time-feature
-  ablation.
+- **Controlled comparison:** a standard Baseline TGN and a Proposed/Enhanced
+  TGN trained under identical conditions.
+
+## The two required models
+
+### 1. Baseline Model — standard TGN
+
+The baseline follows the standard PyTorch Geometric TGN structure:
+
+- identity message function (concatenation without a learned message encoder),
+- last-message aggregation,
+- GRU node memory,
+- learned relative-time encoding,
+- temporal neighbor attention, and
+- an MLP link predictor.
+
+### 2. Proposed Model — enhanced TGN
+
+The proposed model keeps the same data, split, dimensions, seed, optimizer,
+negative sampling, and evaluation protocol. It changes only two components:
+
+1. A learned nonlinear message encoder filters and compresses source memory,
+   destination memory, raw event features, and time encoding before updating
+   node memory.
+2. A gated residual fusion layer learns how much to trust long-term node memory
+   versus the recent time-aware neighborhood, followed by layer normalization.
+
+This controlled design lets the final score difference be attributed to the
+proposed architecture rather than different training conditions. A simple
+recency-frequency method remains available only as an optional reference; it
+is not one of the two main models.
 
 ## Why this version is reliable
 
@@ -54,22 +83,26 @@ If the Stanford server is slow, run it on Colab or another stable connection.
 
 ```bash
 # Inspect the data and verify chronological boundaries.
-temporal-gnn inspect --config configs/wikipedia.json
+temporal-gnn inspect --config configs/baseline_tgn.json
 
-# Establish a non-neural floor.
-temporal-gnn baseline --config configs/wikipedia.json
+# Optional non-neural reference (not the main baseline model).
+temporal-gnn reference --config configs/baseline_tgn.json
 
-# Train the full TGN.
-temporal-gnn train --config configs/wikipedia.json
+# Train model 1: Baseline TGN.
+temporal-gnn train --config configs/baseline_tgn.json
 
-# Run the time-feature ablation.
-temporal-gnn train --config configs/wikipedia_no_graph_time.json
+# Train model 2: Proposed/Enhanced TGN.
+temporal-gnn train --config configs/enhanced_tgn.json
+
+# Verify that the settings match and generate comparison.json + comparison.md.
+temporal-gnn compare
 ```
 
 For a one-epoch integration check:
 
 ```bash
-temporal-gnn train --config configs/wikipedia.json --smoke
+temporal-gnn train --config configs/baseline_tgn.json --smoke
+temporal-gnn train --config configs/enhanced_tgn.json --smoke
 ```
 
 Metrics are saved as JSON under `outputs/`. Copy the final values into the
@@ -82,8 +115,8 @@ inactivity-gap trends.
 pytest
 ```
 
-The tests cover chronological ordering, split leakage, time bins, and
-inactivity-gap analysis.
+The tests cover both model variants, chronological ordering, split leakage,
+time bins, inactivity-gap analysis, and rejection of unfair comparisons.
 
 ## References
 
@@ -92,4 +125,3 @@ inactivity-gap analysis.
 - [JODIEDataset documentation](https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.datasets.JODIEDataset.html)
 - [TGNMemory documentation](https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.nn.models.TGNMemory.html)
 - [TemporalData documentation](https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.data.TemporalData.html)
-

@@ -16,26 +16,29 @@ class TGNIntegrationTests(unittest.TestCase):
         messages = torch.arange(48, dtype=torch.float).reshape(12, 4) / 48
         data = TemporalData(src=src, dst=dst, t=timestamps, msg=messages)
 
-        config = ExperimentConfig(
-            batch_size=4,
-            neighbor_size=3,
-            memory_dim=8,
-            time_dim=8,
-            embedding_dim=8,
-            epochs=1,
-            patience=1,
-        )
-        experiment = TGNExperiment(config, data, torch.device("cpu"))
-        loss = experiment.train_epoch(data[:8])
-        validation = experiment.evaluate(data[8:10], seed=42)
+        for variant in ("baseline", "enhanced"):
+            with self.subTest(variant=variant):
+                config = ExperimentConfig(
+                    batch_size=4,
+                    neighbor_size=3,
+                    memory_dim=8,
+                    time_dim=8,
+                    embedding_dim=8,
+                    model_variant=variant,
+                    epochs=1,
+                    patience=1,
+                )
+                experiment = TGNExperiment(config, data, torch.device("cpu"))
+                loss = experiment.train_epoch(data[:8])
+                validation = experiment.evaluate(data[8:10], seed=42)
 
-        self.assertTrue(math.isfinite(loss))
-        self.assertEqual(
-            validation["chronological_bins"][0]["events"],
-            1,
-        )
-        self.assertIn("average_precision", validation["overall"])
-        self.assertIn("inactivity_gap_bins", validation)
+                self.assertTrue(math.isfinite(loss))
+                self.assertEqual(
+                    validation["chronological_bins"][0]["events"],
+                    1,
+                )
+                self.assertIn("average_precision", validation["overall"])
+                self.assertIn("inactivity_gap_bins", validation)
 
 
 if __name__ == "__main__":

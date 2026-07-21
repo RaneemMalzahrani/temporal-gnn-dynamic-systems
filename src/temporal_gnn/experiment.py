@@ -21,7 +21,12 @@ from .metrics import (
     chronological_performance,
     inactivity_gap_performance,
 )
-from .model import LinkPredictor, TemporalGraphAttention
+from .model import (
+    GatedTemporalGraphAttention,
+    LearnedMessage,
+    LinkPredictor,
+    TemporalGraphAttention,
+)
 
 
 @dataclass
@@ -38,22 +43,30 @@ class TGNExperiment:
         self.config = config
         self.data = data.to(device)
         self.device = device
+        if config.model_variant == "baseline":
+            message_module = IdentityMessage(
+                data.msg.size(-1), config.memory_dim, config.time_dim
+            )
+            embedding_type = TemporalGraphAttention
+        else:
+            message_module = LearnedMessage(
+                data.msg.size(-1), config.memory_dim, config.time_dim
+            )
+            embedding_type = GatedTemporalGraphAttention
+
         memory = TGNMemory(
             num_nodes=data.num_nodes,
             raw_msg_dim=data.msg.size(-1),
             memory_dim=config.memory_dim,
             time_dim=config.time_dim,
-            message_module=IdentityMessage(
-                data.msg.size(-1), config.memory_dim, config.time_dim
-            ),
+            message_module=message_module,
             aggregator_module=LastAggregator(),
         ).to(device)
-        embedding = TemporalGraphAttention(
+        embedding = embedding_type(
             config.memory_dim,
             config.embedding_dim,
             data.msg.size(-1),
             memory.time_enc,
-            use_time_encoding=config.use_graph_time_encoding,
         ).to(device)
         predictor = LinkPredictor(config.embedding_dim).to(device)
         parameters = (
@@ -85,6 +98,19 @@ class TGNExperiment:
     def reset_state(self) -> None:
         self.modules.memory.reset_state()
         self.modules.neighbors.reset_state()
+
+    def trainable_parameter_count(self) -> int:
+        unique = {
+            id(parameter): parameter
+            for module in (
+                self.modules.memory,
+                self.modules.embedding,
+                self.modules.predictor,
+            )
+            for parameter in module.parameters()
+            if parameter.requires_grad
+        }
+        return sum(parameter.numel() for parameter in unique.values())
 
     def _embed(self, batch: Any):
         n_id, edge_index, e_id = self.modules.neighbors(batch.n_id)

@@ -20,7 +20,7 @@ class ExperimentConfig:
     memory_dim: int = 100
     time_dim: int = 100
     embedding_dim: int = 100
-    use_graph_time_encoding: bool = True
+    model_variant: str = "baseline"
     learning_rate: float = 1e-4
     epochs: int = 20
     patience: int = 5
@@ -32,6 +32,8 @@ class ExperimentConfig:
             raise ValueError("validation and test ratios must be positive")
         if self.val_ratio + self.test_ratio >= 1:
             raise ValueError("validation + test ratios must be below 1")
+        if self.model_variant not in {"baseline", "enhanced"}:
+            raise ValueError("model_variant must be baseline or enhanced")
         for name in ("batch_size", "neighbor_size", "memory_dim", "time_dim",
                      "embedding_dim", "epochs", "patience"):
             if getattr(self, name) <= 0:
