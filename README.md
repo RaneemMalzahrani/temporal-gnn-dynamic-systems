@@ -1,15 +1,29 @@
 # Temporal Graph Neural Networks for Dynamic Systems
 
-A from-scratch, leakage-safe study of temporal link prediction on a dynamic
-interaction graph. The project implements a Temporal Graph Network (TGN) with
-node memory, learned time encoding, recent-neighbor attention, and a link
-predictor.
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
+[![PyTorch Geometric](https://img.shields.io/badge/PyG-TGN-orange)](https://pytorch-geometric.readthedocs.io/)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen)]()
+[![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
+
+This project studies temporal link prediction on a dynamic interaction graph using a Temporal Graph Network (TGN) with node memory, learned time encoding, recent-neighbor attention, and a link predictor. It also introduces a controlled, isolated architectural enhancement to test whether added model complexity actually improves results — with strict safeguards against temporal data leakage throughout.
 
 ## Academic context
 
 This project was developed for the **Graph Theory** course in **Level 3 of the
 Master's program at Al-Baha University**.
 
+## Table of Contents
+- [Assignment Coverage](#assignment-coverage)
+- [The Two Models](#the-two-models)
+- [Why This Version Is Reliable](#why-this-version-is-reliable)
+- [Results](#results)
+- [Project Structure](#project-structure)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Troubleshooting](#troubleshooting)
+- [Tests](#tests)
+- [References](#references)
 
 ## Assignment coverage
 
